@@ -1,0 +1,24 @@
+[package]
+name = "lock-fund"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "lock_fund"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["event-cpi"] }
+anchor-spl = { workspace = true, features = ["memo"] }
+bytemuck = { version = "1.13.1", features = ["derive", "min_const_generics"] }
+num_enum = "0.7"
+static_assertions = "1.1"
