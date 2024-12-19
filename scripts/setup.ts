@@ -8,7 +8,7 @@ const getSeed = (seed: string, program: anchor.Program<LockFund>): Buffer => {
   );
 };
 
-export function getEscrowProgram(
+export function getProgram(
   connection: anchor.web3.Connection,
   wallet?: anchor.Wallet
 ): anchor.Program<LockFund> {
@@ -19,17 +19,20 @@ export function getEscrowProgram(
   return new anchor.Program<LockFund>(idl as LockFund, provider);
 }
 
-export function getEscrowPda(program: anchor.Program<LockFund>) {
+export function getConfigAccount(program: anchor.Program<LockFund>) {
+  const escrow = getEscrowAccount(program);
   return anchor.web3.PublicKey.findProgramAddressSync(
-    [getSeed("escrowSeed", program), program.provider.publicKey.toBuffer()],
+    [getSeed("configSeed", program), escrow.toBuffer()],
     program.programId
   )[0];
 }
 
-export function getEscrowVaultPda(program: anchor.Program<LockFund>) {
-  const escrowPda = getEscrowPda(program);
+export function getEscrowAccount(program: anchor.Program<LockFund>) {
   return anchor.web3.PublicKey.findProgramAddressSync(
-    [getSeed("escrowVaultSeed", program), escrowPda.toBuffer()],
+    [
+      getSeed("escrowSeed", program),
+      program.provider.publicKey.toBuffer(),
+    ],
     program.programId
   )[0];
 }

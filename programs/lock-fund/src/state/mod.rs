@@ -1,3 +1,3 @@
-pub mod escrow_lock_fund;
+pub mod config_account;
 
-pub use escrow_lock_fund::*;
+pub use config_account::*;

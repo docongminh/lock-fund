@@ -12,7 +12,7 @@ pub enum UpdateActorMode {
 
 #[account(zero_copy)]
 #[derive(InitSpace)]
-pub struct LockFundEscrow {
+pub struct ConfigAccount {
     // Authority of this lock fund escrow aka creator
     pub authority: Pubkey,
     // Multi-sign to increase secure for withdraw fund action
@@ -20,7 +20,7 @@ pub struct LockFundEscrow {
     // Recipient fund address
     pub recipient: Pubkey,
     // escrow vault
-    pub escrow_vault: Pubkey,
+    pub escrow: Pubkey,
     /// Cliff time: After the cliff time, the actor can withdraw funds
     pub cliff_time: u64,
     // Max amount that can be withdrawn per day to prevent draining all funds in case of a vulnerability
@@ -28,40 +28,40 @@ pub struct LockFundEscrow {
     // Mode allows fields to be updatable
     pub update_actor_mode: u8,
     // 1: Allow, 0: Deny
-    pub enable_withdrawl_full: u8,
+    pub enable_transfer_full: u8,
     // Escrow bump
-    pub escrow_bump: u8,
+    pub config_bump: u8,
     // Escrow vault bump
-    pub escrow_vault_bump: u8,
+    pub escrow_bump: u8,
     // padding for alignment
-    pub padding_0: [u8; 12]
+    pub padding_0: [u8; 12],
 }
 
-const_assert_eq!(LockFundEscrow::INIT_SPACE, 160);
+const_assert_eq!(ConfigAccount::INIT_SPACE, 160);
 
-impl LockFundEscrow {
+impl ConfigAccount {
     pub fn init(
         &mut self,
         authority: Pubkey,
         approver: Pubkey,
         recipient: Pubkey,
-        escrow_vault: Pubkey,
+        escrow: Pubkey,
         cliff_time: u64,
         amount_per_day: u64,
         update_actor_mode: u8,
-        enable_withdrawl_full: u8,
+        enable_transfer_full: u8,
+        config_bump: u8,
         escrow_bump: u8,
-        escrow_vault_bump: u8
     ) {
         self.authority = authority;
         self.approver = approver;
         self.recipient = recipient;
         self.cliff_time = cliff_time;
         self.amount_per_day = amount_per_day;
-        self.escrow_bump = escrow_bump;
         self.update_actor_mode = update_actor_mode;
-        self.enable_withdrawl_full = enable_withdrawl_full;
-        self.escrow_vault = escrow_vault;
-        self.escrow_vault_bump = escrow_vault_bump;
+        self.enable_transfer_full = enable_transfer_full;
+        self.escrow = escrow;
+        self.config_bump = config_bump;
+        self.escrow_bump = escrow_bump;
     }
 }

@@ -11,16 +11,16 @@ pub use errors::*;
 pub use event::*;
 pub use instructions::*;
 pub use state::*;
-declare_id!("7HWckviZKevXmYJZ8A4NMxYgRk3jVCrRZmLnsqNZvkpm");
+declare_id!("5aBQfQ6A6qWVSiQTEweyg9RYLkWgg7BDYh9yScBSP547");
 
 #[program]
 pub mod lock_fund {
     use super::*;
 
-    pub fn create_lock_fund_escrow(
-        ctx: Context<CreateLockFundEscrow>,
-        params: CreateEscrowFundParams,
+    pub fn create_config(
+        ctx: Context<CreateConfig>,
+        params: CreateConfigParams,
     ) -> Result<()> {
-        create_lock_fund_escrow_handler(ctx, &params)
+        create_config_handler(ctx, &params)
     }
 }

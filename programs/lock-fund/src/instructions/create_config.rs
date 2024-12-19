@@ -1,25 +1,23 @@
 use anchor_lang::prelude::*;
 
-use crate::{
-    CreateLockFundEscrowEvent, LockFundEscrow, LockFundEscrowError, ESCROW_SEED, ESCROW_VAULT_SEED,
-};
+use crate::{ConfigAccount, CreateConfigEvent, LockFundEscrowError, CONFIG_SEED, ESCROW_SEED};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct CreateEscrowFundParams {
+pub struct CreateConfigParams {
     pub cliff_time_duration: u64,
     pub amount_per_day: u64,
     pub update_actor_mode: u8,
-    pub enable_withdrawl_full: u8,
+    pub enable_transfer_full: u8,
 }
 
-impl CreateEscrowFundParams {
+impl CreateConfigParams {
     pub fn validate_params(&self) -> Result<()> {
         Ok(())
     }
 
-    pub fn init_escrow_lock(
+    pub fn init_config(
         &self,
-        lock_fund_escrow: &AccountLoader<LockFundEscrow>,
+        config_account: &AccountLoader<ConfigAccount>,
         authority: Pubkey,
         approver: Pubkey,
         recipient: Pubkey,
@@ -27,7 +25,7 @@ impl CreateEscrowFundParams {
         cliff_time_duration: u64,
         amount_per_day: u64,
         update_actor_mode: u8,
-        enable_withdrawl_full: u8,
+        enable_transfer_full: u8,
         escrow_bump: u8,
         escrow_vault_bump: u8,
     ) -> Result<()> {
@@ -35,9 +33,9 @@ impl CreateEscrowFundParams {
 
         require_keys_neq!(authority, approver, LockFundEscrowError::DuplicatePubkey);
 
-        let mut lock_fund_escrow = lock_fund_escrow.load_init()?;
+        let mut config_account = config_account.load_init()?;
         let cliff_time = Clock::get()?.unix_timestamp as u64 + cliff_time_duration;
-        lock_fund_escrow.init(
+        config_account.init(
             authority,
             approver,
             recipient,
@@ -45,7 +43,7 @@ impl CreateEscrowFundParams {
             cliff_time,
             amount_per_day,
             update_actor_mode,
-            enable_withdrawl_full,
+            enable_transfer_full,
             escrow_bump,
             escrow_vault_bump,
         );
@@ -55,10 +53,23 @@ impl CreateEscrowFundParams {
 }
 
 #[derive(Accounts)]
-pub struct CreateLockFundEscrow<'info> {
+pub struct CreateConfig<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
 
+    #[account(
+        init,
+        seeds = [
+            CONFIG_SEED.as_ref(),
+            escrow.key().as_ref(),
+        ],
+        bump,
+        payer = authority,
+        space = 8 + ConfigAccount::INIT_SPACE
+    )]
+    pub config_account: AccountLoader<'info, ConfigAccount>,
+
+    /// CHECK: escrow vault
     #[account(
         init,
         seeds = [
@@ -67,23 +78,10 @@ pub struct CreateLockFundEscrow<'info> {
         ],
         bump,
         payer = authority,
-        space = 8 + LockFundEscrow::INIT_SPACE
-    )]
-    pub lock_fund_escrow: AccountLoader<'info, LockFundEscrow>,
-
-    /// CHECK: escrow vault
-    #[account(
-        init,
-        seeds = [
-            ESCROW_VAULT_SEED.as_ref(),
-            lock_fund_escrow.key().as_ref(),
-        ],
-        bump,
-        payer = authority,
         space = 0,
         owner = system_program.key()
     )]
-    pub escrow_vault: AccountInfo<'info>,
+    pub escrow: AccountInfo<'info>,
 
     /// CHECK: recipient account.
     pub recipient: UncheckedAccount<'info>,
@@ -95,39 +93,39 @@ pub struct CreateLockFundEscrow<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn create_lock_fund_escrow_handler(
-    ctx: Context<CreateLockFundEscrow>,
-    params: &CreateEscrowFundParams,
+pub fn create_config_handler(
+    ctx: Context<CreateConfig>,
+    params: &CreateConfigParams,
 ) -> Result<()> {
-    params.init_escrow_lock(
-        &ctx.accounts.lock_fund_escrow,
+    params.init_config(
+        &ctx.accounts.config_account,
         ctx.accounts.authority.key(),
         ctx.accounts.approver.key(),
         ctx.accounts.recipient.key(),
-        ctx.accounts.escrow_vault.key(),
+        ctx.accounts.escrow.key(),
         params.cliff_time_duration,
         params.amount_per_day,
         params.update_actor_mode,
-        params.enable_withdrawl_full,
-        ctx.bumps.lock_fund_escrow,
-        ctx.bumps.escrow_vault,
+        params.enable_transfer_full,
+        ctx.bumps.config_account,
+        ctx.bumps.escrow,
     )?;
 
-    let &CreateEscrowFundParams {
+    let &CreateConfigParams {
         cliff_time_duration,
         amount_per_day,
         update_actor_mode,
-        enable_withdrawl_full,
+        enable_transfer_full,
     } = params;
 
-    emit!(CreateLockFundEscrowEvent {
+    emit!(CreateConfigEvent {
         authority: ctx.accounts.authority.key(),
         approver: ctx.accounts.approver.key(),
         recipient: ctx.accounts.recipient.key(),
         cliff_time_duration,
         amount_per_day,
         update_actor_mode,
-        enable_withdrawl_full,
+        enable_transfer_full,
     });
     Ok(())
 }
