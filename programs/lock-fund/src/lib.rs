@@ -11,7 +11,7 @@ pub use errors::*;
 pub use event::*;
 pub use instructions::*;
 pub use state::*;
-declare_id!("9brXu1LNCURaR8bde1ekTueEnafQ1nHDn1Y2BTfzCKyK");
+declare_id!("7HWckviZKevXmYJZ8A4NMxYgRk3jVCrRZmLnsqNZvkpm");
 
 #[program]
 pub mod lock_fund {
