@@ -10,3 +10,11 @@ pub struct CreateConfigEvent {
     pub update_actor_mode: u8,
     pub enable_transfer_full: u8,
 }
+
+#[event]
+pub struct TransferTokenEvent {
+    pub from: Pubkey,
+    pub to: Pubkey,
+    pub config_account: Pubkey,
+    pub amount: u64
+}

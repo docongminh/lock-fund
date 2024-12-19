@@ -1,4 +1,4 @@
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
 use crate::*;
 
@@ -9,33 +9,62 @@ pub struct TransferToken<'info> {
     #[account(mut)]
     pub config_account: AccountLoader<'info, ConfigAccount>,
 
-    // pub escrow_vault: AccountInfo<'info>,
+    /// CHECK: This account use to validate escrow_token
+    pub escrow: AccountInfo<'info>,
 
-    // pub recipient_token_account: AccountInfo<'info>,
+    /// CHECK: Escrow Token Account.
+    #[account(
+        mut,
+        associated_token::mint = mint_token,
+        associated_token::authority = escrow
+    )]
+    pub escrow_token: Account<'info, TokenAccount>,
 
-    // pub authority: Signer<'info>,
-    // pub approver: Signer<'info>,
+    /// CHECK: Recipient Token Account.
+    #[account(
+        mut,
+        associated_token::mint = mint_token,
+        associated_token::authority = recipient
+    )]
+    pub recipient_token: Account<'info, TokenAccount>,
 
+    /// CHECK: This account use to validate transfer recipient
+    pub recipient: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub mint_token: Account<'info, Mint>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub approver: Signer<'info>,
     /// Token program.
     pub token_program: Program<'info, Token>,
 }
 
 pub fn transfer_token_handler(ctx: Context<TransferToken>, amount: u64) -> Result<()> {
-    // let escrow_state = escrow.load()?;
-    // let escrow_seeds = escrow_seeds!(escrow_state);
+    let config_account = ctx.accounts.config_account.load()?;
+    let escrow_seeds = escrow_seeds!(config_account);
 
-    // anchor_spl::token::transfer(
-    //     CpiContext::new_with_signer(
-    //         token_program.to_account_info(),
-    //         Transfer {
-    //             from: escrow_token.to_account_info(),
-    //             to: recipient_token.to_account_info(),
-    //             authority: escrow.to_account_info(),
-    //         },
-    //         &[&escrow_seeds[..]],
-    //     ),
-    //     amount,
-    // )?;
+    anchor_spl::token::transfer(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.escrow_token.to_account_info(),
+                to: ctx.accounts.recipient_token.to_account_info(),
+                authority: ctx.accounts.escrow.to_account_info(),
+            },
+            &[&escrow_seeds[..]],
+        ),
+        amount,
+    )?;
+
+    emit_cpi!(TransferTokenEvent {
+        from: ctx.accounts.escrow_token.key(),
+        to: ctx.accounts.recipient_token.key(),
+        config_account: ctx.accounts.config_account.key(),
+        amount: amount
+    });
 
     Ok(())
 }
