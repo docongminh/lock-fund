@@ -35,4 +35,8 @@ pub mod lock_fund {
     pub fn transfer_token(ctx: Context<TransferToken>, amount: u64) -> Result<()> {
         transfer_token_handler(ctx, amount)
     }
+
+    pub fn transfer_sol(ctx: Context<TransferSol>, amount: u64) -> Result<()> {
+        transfer_sol_handler(ctx, amount)
+    }
 }

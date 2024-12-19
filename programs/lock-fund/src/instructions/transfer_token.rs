@@ -59,7 +59,7 @@ pub fn transfer_token_handler(ctx: Context<TransferToken>, amount: u64) -> Resul
         amount,
     )?;
 
-    emit_cpi!(TransferTokenEvent {
+    emit_cpi!(TransferEvent {
         from: ctx.accounts.escrow_token.key(),
         to: ctx.accounts.recipient_token.key(),
         config_account: ctx.accounts.config_account.key(),

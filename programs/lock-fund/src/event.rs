@@ -12,7 +12,7 @@ pub struct CreateConfigEvent {
 }
 
 #[event]
-pub struct TransferTokenEvent {
+pub struct TransferEvent {
     pub from: Pubkey,
     pub to: Pubkey,
     pub config_account: Pubkey,
