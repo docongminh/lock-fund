@@ -14,7 +14,7 @@ import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
   const recipient = new anchor.web3.PublicKey(
     "CPb3FSzbsHv5tkKuWzgT7xKMxa2DwnBRnFMHY46jaopy"
   );
-  const cliffTime = new anchor.BN(0); //
+  const cliffTimeDuration = new anchor.BN(0); //
   const amountPerDay = new anchor.BN(1000 * 10e6);
   const updateActorMode = 1;
   const enableWithdrawlFull = 0;
@@ -37,7 +37,7 @@ import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
   };
   const signature = await program.methods
     .createLockFundEscrow({
-      cliffTime,
+      cliffTimeDuration,
       amountPerDay,
       updateActorMode,
       enableWithdrawlFull,

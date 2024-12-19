@@ -6,7 +6,7 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct CreateEscrowFundParams {
-    pub cliff_time: u64,
+    pub cliff_time_duration: u64,
     pub amount_per_day: u64,
     pub update_actor_mode: u8,
     pub enable_withdrawl_full: u8,
@@ -24,7 +24,7 @@ impl CreateEscrowFundParams {
         approver: Pubkey,
         recipient: Pubkey,
         escrow_vault: Pubkey,
-        cliff_time: u64,
+        cliff_time_duration: u64,
         amount_per_day: u64,
         update_actor_mode: u8,
         enable_withdrawl_full: u8,
@@ -36,6 +36,7 @@ impl CreateEscrowFundParams {
         require_keys_neq!(authority, approver, LockFundEscrowError::DuplicatePubkey);
 
         let mut lock_fund_escrow = lock_fund_escrow.load_init()?;
+        let cliff_time = Clock::get()?.unix_timestamp as u64 + cliff_time_duration;
         lock_fund_escrow.init(
             authority,
             approver,
@@ -104,7 +105,7 @@ pub fn create_lock_fund_escrow_handler(
         ctx.accounts.approver.key(),
         ctx.accounts.recipient.key(),
         ctx.accounts.escrow_vault.key(),
-        params.cliff_time,
+        params.cliff_time_duration,
         params.amount_per_day,
         params.update_actor_mode,
         params.enable_withdrawl_full,
@@ -113,7 +114,7 @@ pub fn create_lock_fund_escrow_handler(
     )?;
 
     let &CreateEscrowFundParams {
-        cliff_time,
+        cliff_time_duration,
         amount_per_day,
         update_actor_mode,
         enable_withdrawl_full,
@@ -123,7 +124,7 @@ pub fn create_lock_fund_escrow_handler(
         authority: ctx.accounts.authority.key(),
         approver: ctx.accounts.approver.key(),
         recipient: ctx.accounts.recipient.key(),
-        cliff_time,
+        cliff_time_duration,
         amount_per_day,
         update_actor_mode,
         enable_withdrawl_full,
