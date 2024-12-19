@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 
-use crate::{CreateLockFundEscrowEvent, LockFundEscrow, LockFundEscrowError, ESCROW_SEED};
+use crate::{
+    CreateLockFundEscrowEvent, LockFundEscrow, LockFundEscrowError, ESCROW_SEED, ESCROW_VAULT_SEED,
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct CreateEscrowFundParams {
@@ -22,11 +24,13 @@ impl CreateEscrowFundParams {
         authority: Pubkey,
         approver: Pubkey,
         recipient: Pubkey,
+        escrow_vault: Pubkey,
         cliff_time: u64,
         amount_per_day: u64,
-        escrow_bump: u8,
         update_actor_mode: u8,
         enable_withdrawl_full: u8,
+        escrow_bump: u8,
+        escrow_vault_bump: u8,
     ) -> Result<()> {
         self.validate_params()?;
 
@@ -37,11 +41,13 @@ impl CreateEscrowFundParams {
             authority,
             approver,
             recipient,
+            escrow_vault,
             cliff_time,
             amount_per_day,
-            escrow_bump,
             update_actor_mode,
             enable_withdrawl_full,
+            escrow_bump,
+            escrow_vault_bump,
         );
 
         Ok(())
@@ -65,6 +71,20 @@ pub struct CreateLockFundEscrow<'info> {
     )]
     pub lock_fund_escrow: AccountLoader<'info, LockFundEscrow>,
 
+    /// CHECK: escrow vault
+    #[account(
+        init,
+        seeds = [
+            ESCROW_VAULT_SEED.as_ref(),
+            lock_fund_escrow.key().as_ref(),
+        ],
+        bump,
+        payer = authority,
+        space = 0,
+        owner = system_program.key()
+    )]
+    pub escrow_vault: AccountInfo<'info>,
+
     /// CHECK: recipient account.
     pub recipient: UncheckedAccount<'info>,
 
@@ -84,11 +104,13 @@ pub fn create_lock_fund_escrow_handler(
         ctx.accounts.authority.key(),
         ctx.accounts.approver.key(),
         ctx.accounts.recipient.key(),
+        ctx.accounts.escrow_vault.key(),
         params.cliff_time,
         params.amount_per_day,
-        ctx.bumps.lock_fund_escrow,
         params.update_actor_mode,
         params.enable_withdrawl_full,
+        ctx.bumps.lock_fund_escrow,
+        ctx.bumps.escrow_vault,
     )?;
 
     let &CreateEscrowFundParams {

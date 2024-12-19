@@ -19,21 +19,25 @@ pub struct LockFundEscrow {
     pub approver: Pubkey,
     // Recipient fund address
     pub recipient: Pubkey,
+    // escrow vault
+    pub escrow_vault: Pubkey,
     /// Cliff time: After the cliff time, the actor can withdraw funds
     pub cliff_time: u64,
     // Max amount that can be withdrawn per day to prevent draining all funds in case of a vulnerability
     pub amount_per_day: u64,
-    // Escrow bump
-    pub escrow_bump: u8,
     // Mode allows fields to be updatable
     pub update_actor_mode: u8,
     // 1: Allow, 0: Deny
     pub enable_withdrawl_full: u8,
+    // Escrow bump
+    pub escrow_bump: u8,
+    // Escrow vault bump
+    pub escrow_vault_bump: u8,
     // padding for alignment
-    pub padding_0: [u8; 5],
+    pub padding_0: [u8; 12]
 }
 
-const_assert_eq!(LockFundEscrow::INIT_SPACE, 120); // 32 * 3 + 64 * 2 + 8
+const_assert_eq!(LockFundEscrow::INIT_SPACE, 160);
 
 impl LockFundEscrow {
     pub fn init(
@@ -41,11 +45,13 @@ impl LockFundEscrow {
         authority: Pubkey,
         approver: Pubkey,
         recipient: Pubkey,
+        escrow_vault: Pubkey,
         cliff_time: u64,
         amount_per_day: u64,
-        escrow_bump: u8,
         update_actor_mode: u8,
         enable_withdrawl_full: u8,
+        escrow_bump: u8,
+        escrow_vault_bump: u8
     ) {
         self.authority = authority;
         self.approver = approver;
@@ -55,5 +61,7 @@ impl LockFundEscrow {
         self.escrow_bump = escrow_bump;
         self.update_actor_mode = update_actor_mode;
         self.enable_withdrawl_full = enable_withdrawl_full;
+        self.escrow_vault = escrow_vault;
+        self.escrow_vault_bump = escrow_vault_bump;
     }
 }
