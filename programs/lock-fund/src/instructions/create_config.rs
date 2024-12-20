@@ -1,56 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{ConfigAccount, CreateConfigEvent, LockFundEscrowError, CONFIG_SEED, ESCROW_SEED};
-
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct CreateConfigParams {
-    pub cliff_time_duration: u64,
-    pub amount_per_day: u64,
-    pub update_actor_mode: u8,
-    pub enable_transfer_full: u8,
-}
-
-impl CreateConfigParams {
-    pub fn validate_params(&self) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn init_config(
-        &self,
-        config_account: &AccountLoader<ConfigAccount>,
-        authority: Pubkey,
-        approver: Pubkey,
-        recipient: Pubkey,
-        escrow_vault: Pubkey,
-        cliff_time_duration: u64,
-        amount_per_day: u64,
-        update_actor_mode: u8,
-        enable_transfer_full: u8,
-        escrow_bump: u8,
-        escrow_vault_bump: u8,
-    ) -> Result<()> {
-        self.validate_params()?;
-
-        require_keys_neq!(authority, approver, LockFundEscrowError::DuplicatePubkey);
-
-        let mut config_account = config_account.load_init()?;
-        let cliff_time = Clock::get()?.unix_timestamp as u64 + cliff_time_duration;
-        config_account.init(
-            authority,
-            approver,
-            recipient,
-            escrow_vault,
-            cliff_time,
-            amount_per_day,
-            update_actor_mode,
-            enable_transfer_full,
-            escrow_bump,
-            escrow_vault_bump,
-        );
-
-        Ok(())
-    }
-}
+use crate::{ConfigAccount, CreateConfigEvent, CreateConfigParams, CONFIG_SEED, ESCROW_SEED};
 
 #[derive(Accounts)]
 pub struct CreateConfig<'info> {
