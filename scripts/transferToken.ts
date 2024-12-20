@@ -5,7 +5,6 @@ import {
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { getProgram, getEscrowAccount, getConfigAccount } from "./setup";
-import { TOKEN_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { LockFund } from "../target/types/lock_fund";
 
 type TransferTokenParams = {
@@ -20,7 +19,6 @@ const transferToken = async (
 ): Promise<string> => {
   const { mintToken, amount } = params;
   const escrow = getEscrowAccount(program);
-  console.log(escrow);
   const configAccount = getConfigAccount(program);
   const configAccountData = await program.account.configAccount.fetch(
     configAccount
@@ -35,9 +33,28 @@ const transferToken = async (
   console.log({
     escrow: escrow.toString(),
     escrowToken: escrowToken.toString(),
-    recipientToken: escrowToken.toString(),
+    recipientToken: recipientToken.toString(),
   });
+  const tokenInfo = await program.provider.connection.getParsedAccountInfo(
+    mintToken
+  );
 
+  const preInstruction = [];
+  const recipientAccount = await program.provider.connection.getAccountInfo(
+    recipientToken
+  );
+  if (!recipientAccount) {
+    preInstruction.push(
+      createAssociatedTokenAccountInstruction(
+        authority.publicKey,
+        recipientToken,
+        configAccountData.recipient,
+        mintToken,
+        tokenInfo.value.owner,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+  }
   const accounts = {
     configAccount,
     escrow,
@@ -47,21 +64,13 @@ const transferToken = async (
     mintToken,
     authority: authority.publicKey,
     approver: approver.publicKey,
-    tokenProgram: TOKEN_PROGRAM_ID,
+    tokenProgram: tokenInfo.value.owner,
   };
+
   return await program.methods
     .transferToken(amount)
     .accounts(accounts)
-    .preInstructions([
-      createAssociatedTokenAccountInstruction(
-        authority.publicKey,
-        recipientToken,
-        configAccountData.recipient,
-        mintToken,
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      ),
-    ])
+    .preInstructions(preInstruction)
     .signers([authority, approver])
     .rpc();
 };
