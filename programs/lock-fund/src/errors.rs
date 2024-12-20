@@ -7,6 +7,8 @@ pub enum LockFundEscrowError {
     Unauthorize,
     #[msg("Two pubkey can not duplicate")]
     DuplicatePubkey,
-    #[msg("nvalid Recipient")]
+    #[msg("invalid escrow")]
+    InvalidEscrow,
+    #[msg("invalid Recipient")]
     InvalidRecipient
 }

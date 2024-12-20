@@ -3,15 +3,16 @@ use crate::*;
 #[event_cpi]
 #[derive(Accounts)]
 pub struct TransferSol<'info> {
-    /// Escrow.
-    #[account(mut)]
+
+    #[account(mut, has_one = authority, has_one = approver)]
     pub config_account: AccountLoader<'info, ConfigAccount>,
-    /// CHECK:
-    #[account(mut)]
+
+    /// CHECK: account will transfer fund
+    #[account(mut, constraint = escrow.key() == config_account.load()?.escrow @ LockFundEscrowError::InvalidEscrow)]
     pub escrow: AccountInfo<'info>,
 
-    /// CHECK:
-    #[account(mut)]
+    /// CHECK: account will receive fund
+    #[account(mut, constraint = recipient.key() == config_account.load()?.recipient @ LockFundEscrowError::InvalidRecipient)]
     pub recipient: AccountInfo<'info>,
 
     #[account(mut)]

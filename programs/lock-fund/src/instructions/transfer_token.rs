@@ -13,6 +13,7 @@ pub struct TransferToken<'info> {
     pub config_account: AccountLoader<'info, ConfigAccount>,
 
     /// CHECK: This account use to validate escrow_token
+    /// #[account(mut, constraint = escrow.key() == config_account.load()?.escrow @ LockFundEscrowError::InvalidEscrow)]
     pub escrow: AccountInfo<'info>,
 
     /// CHECK: Escrow Token Account.
@@ -32,6 +33,7 @@ pub struct TransferToken<'info> {
     pub recipient_token: InterfaceAccount<'info, TokenAccount>,
 
     /// CHECK: This account use to validate transfer recipient
+    #[account(mut, constraint = recipient.key() == config_account.load()?.recipient @ LockFundEscrowError::InvalidRecipient)]
     pub recipient: AccountInfo<'info>,
 
     #[account(mint::token_program = token_program)]
