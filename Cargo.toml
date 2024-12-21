@@ -1,6 +1,7 @@
 [workspace]
-members = [
-    "programs/*"
+members = [ "cli",
+    "programs/*",
+    "cli"
 ]
 resolver = "2"
 

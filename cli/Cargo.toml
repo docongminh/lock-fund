@@ -1,0 +1,14 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes-gcm = "0.10.3"
+anchor-lang = { workspace = true }
+anchor-spl = { workspace = true }
+anyhow = "1.0.94"
+argon2 = "0.5.3"
+lock-fund = { path = "../programs/lock-fund"}
+rand_core = "0.6.4"
+secrecy = "0.10.3"
