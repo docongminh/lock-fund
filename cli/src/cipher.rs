@@ -3,7 +3,6 @@ use aes_gcm::{
     Aes256Gcm,
 };
 use anyhow::{anyhow, Result};
-use solana_sdk::signer::keypair::Keypair;
 
 pub struct Cipher;
 
@@ -37,7 +36,7 @@ impl Cipher {
         )
     }
 
-    fn decrypt(
+    pub fn decrypt(
         &self,
         encrypted_private_key: &[u8],
         password: &[u8],
@@ -65,6 +64,7 @@ impl Cipher {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use solana_sdk::signer::keypair::Keypair;
 
     const AAD: [u8; 32] = [1_u8; 32];
 
