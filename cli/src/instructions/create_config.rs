@@ -1,17 +1,16 @@
 use crate::*;
 
-use anchor_client::{
-    anchor_lang::{InstructionData, ToAccountMetas},
-    solana_sdk::{signature::Keypair, signer::Signer},
+use anchor_client::anchor_lang::{InstructionData, ToAccountMetas};
+use anchor_client::solana_sdk::{
+    instruction::Instruction,
+    pubkey::Pubkey,
+    signature::{Keypair, Signature},
+    signer::Signer,
+    transaction::Transaction,
 };
 use anchor_lang::solana_program;
-use anchor_spl::token;
 use anyhow::{Ok, Result};
 use solana_rpc_client::rpc_client::RpcClient;
-use solana_sdk::{
-    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
-    signature::Signature, transaction::Transaction,
-};
 
 pub struct CreateConfigParams {
     pub cliff_time_duration: u64,
@@ -37,7 +36,7 @@ pub fn create_config(
     let ix = Instruction {
         program_id: lock_fund::ID,
         accounts: lock_fund::accounts::CreateConfig {
-            authority: keypairs[0].pubkey(),
+            authority: keypair.pubkey(),
             config_account: config_account,
             escrow: escrow,
             recipient: params.recipient,
@@ -57,9 +56,10 @@ pub fn create_config(
     };
     let blockhash = client.get_latest_blockhash().unwrap();
     let tx =
-        Transaction::new_signed_with_payer(&ix, Some(keypair.pubkey()), &[&keypair], blockhash);
+        Transaction::new_signed_with_payer(&[ix], Some(&keypair.pubkey()), &[&keypair], blockhash);
     let sig = client
-        .send_and_confirm_transaction_with_spinner(&transaction)
+        .send_and_confirm_transaction_with_spinner(&tx)
         .unwrap();
+
     Ok(sig)
 }

@@ -54,7 +54,7 @@ pub fn decrypt(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solana_sdk::signer::keypair::Keypair;
+    use anchor_client::solana_sdk::signer::keypair::Keypair;
 
     const AAD: [u8; 32] = [1_u8; 32];
 
