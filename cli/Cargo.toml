@@ -1,12 +1,14 @@
 [package]
 name = "cli"
-version = "0.1.0"
-edition = "2021"
+version = { workspace = true }
+edition = { workspace = true }
 
 [dependencies]
 lock-fund = { path = "../programs/lock-fund"}
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
+anchor-client = { workspace = true }
+solana-rpc-client = { workspace = true }
 anyhow = "1.0.94"
 curve25519-dalek = { workspace = true }
 zeroize = { workspace = true }
