@@ -876,6 +876,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "anchor-lang",
+ "anchor-spl",
+ "anyhow",
+ "clap",
+ "curve25519-dalek 3.2.1",
+ "lock-fund",
+ "solana-sdk 2.1.7",
+ "zeroize",
+]
+
+[[package]]
 name = "colorchoice"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1508,21 +1523,6 @@ dependencies = [
  "ark-ff",
  "num-bigint",
  "thiserror",
-]
-
-[[package]]
-name = "lock-cli"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "anchor-lang",
- "anchor-spl",
- "anyhow",
- "clap",
- "curve25519-dalek 3.2.1",
- "lock-fund",
- "solana-sdk 2.1.7",
- "zeroize",
 ]
 
 [[package]]
