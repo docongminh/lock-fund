@@ -1,0 +1,15 @@
+[package]
+name = "lock-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lock-fund = { path = "../programs/lock-fund"}
+anchor-lang = { workspace = true }
+anchor-spl = { workspace = true }
+anyhow = "1.0.94"
+curve25519-dalek = { workspace = true }
+zeroize = { workspace = true }
+aes-gcm = "0.10.3"
+solana-sdk = { workspace = true }
+clap = { version = "4.5.17", features = ["derive"] }
