@@ -28,12 +28,29 @@ pub fn command_config() -> Command {
         .subcommand(Command::new("init").about("Initialize config.json"))
         .subcommand(Command::new("get").about("Get current config"))
         .subcommand(
-            Command::new("set").about("Set a config data").group(
-                ArgGroup::new("config_settings")
-                    .args(&["rpc_url", "approver_path", "authority_path"])
-                    .multiple(true)
-                    .required(true),
-            ),
+            Command::new("set")
+                .about("Set a config data")
+                .arg(
+                    Arg::new("rpc_url")
+                        .short('r')
+                        .long("rpc_url")
+                        .required(true)
+                        .help("RPC URL for solana connection"),
+                )
+                .arg(
+                    Arg::new("authority_path")
+                        .short('a')
+                        .long("authority_path")
+                        .required(true)
+                        .help("authority for sign transaction"),
+                )
+                .arg(
+                    Arg::new("approver_path")
+                        .short('p')
+                        .long("approver_path")
+                        .required(true)
+                        .help("approver for sign transaction"),
+                ),
         )
 }
 
