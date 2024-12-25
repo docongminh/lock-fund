@@ -1,6 +1,6 @@
 use clap::{
     builder::styling::{AnsiColor, Effects, Styles},
-    Arg, ArgGroup, Command,
+    Arg, Command,
 };
 
 pub fn new() -> Command {
@@ -34,22 +34,22 @@ pub fn command_config() -> Command {
                     Arg::new("rpc_url")
                         .short('r')
                         .long("rpc_url")
-                        .required(true)
+                        .required(false)
                         .help("RPC URL for solana connection"),
                 )
                 .arg(
                     Arg::new("authority_path")
                         .short('a')
                         .long("authority_path")
-                        .required(true)
-                        .help("authority for sign transaction"),
+                        .required(false)
+                        .help("Authority for sign transaction"),
                 )
                 .arg(
                     Arg::new("approver_path")
                         .short('p')
                         .long("approver_path")
-                        .required(true)
-                        .help("approver for sign transaction"),
+                        .required(false)
+                        .help("Approver for sign transaction"),
                 ),
         )
 }

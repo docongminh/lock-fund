@@ -21,7 +21,14 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
         Some("config") => match sub_m("config")?.subcommand_name() {
             Some("init") => Ok(action::Action::InitConfig),
             Some("get") => Ok(action::Action::Get),
-            Some("set") => Ok(action::Action::Set),
+            Some("set") => {
+                let matches = sub_m("config")?.subcommand_matches("set").unwrap();
+                Ok(action::Action::Set {
+                    rpc_url: matches.get_one::<String>("rpc_url").cloned(),
+                    authority_path: matches.get_one::<String>("authority_path").cloned(),
+                    approver_path: matches.get_one::<String>("approver_path").cloned(),
+                })
+            }
             _ => unreachable!(),
         },
         Some("encrypt") => {

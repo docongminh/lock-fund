@@ -6,7 +6,6 @@ use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub struct ConfigFile {
-    pub config_file: String,
     pub rpc_url: String,
     pub wss_url: String,
     pub approver_path: String,
@@ -15,17 +14,10 @@ pub struct ConfigFile {
 
 impl Default for ConfigFile {
     fn default() -> Self {
-        let keypair_path = {
-            let mut keypair_path = dirs_next::home_dir().expect("home directory");
-            keypair_path.extend([".config", "solana", "id.json"]);
-            keypair_path.to_str().unwrap().to_string()
-        };
-
         Self {
-            config_file: String::from(""),
             rpc_url: String::from("https://api.mainnet-beta.solana.com"),
             wss_url: String::from(""),
-            authority_path: keypair_path,
+            authority_path: String::from(""),
             approver_path: String::from(""),
         }
     }

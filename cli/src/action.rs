@@ -20,7 +20,11 @@ macro_rules! config_path {
 pub enum Action {
     InitConfig,
     Get,
-    Set,
+    Set {
+        rpc_url: Option<String>,
+        authority_path: Option<String>,
+        approver_path: Option<String>,
+    },
     Encrypt {
         private_key: String,
         password: String,
@@ -68,18 +72,42 @@ pub fn handler(action: Action) -> Result<()> {
         Action::Get => {
             let file_path = config_path!();
             if !Path::new(&file_path).exists() {
-                println_name_value("Config file existed at: ", &file_path);
+                println_name_value("Not found config file at: ", &file_path);
                 exit(1);
             }
             let config =
-                load_from_file::<ConfigFile, String>(file_path).expect("Config file created");
+                load_from_file::<ConfigFile, String>(file_path.clone()).expect("Config file created");
+                println_name_value("FILE PATH: ", &file_path);   
             println_name_value("RPC URL: ", &config.rpc_url);
             println_name_value("WebSocket URL: ", &config.wss_url);
             println_name_value("Approver Path: ", &config.approver_path);
             println_name_value("Authority Path: ", &config.authority_path);
         }
-        Action::Set => {
-            println_name_value("test set:", "okela !");
+        Action::Set {
+            rpc_url,
+            authority_path,
+            approver_path,
+        } => {
+            let file_path = config_path!();
+            if !Path::new(&file_path).exists() {
+                println_name_value("Not found config file at: ", &file_path);
+                exit(1);
+            }
+
+            let mut config = load_from_file::<ConfigFile, String>(file_path.clone())
+                .expect("Config file created");
+            if let Some(rpc_url) = rpc_url {
+                config.rpc_url = rpc_url;
+            }
+            if let Some(authority_path) = authority_path {
+                config.authority_path = authority_path;
+            }
+
+            if let Some(approver_path) = approver_path {
+                config.approver_path = approver_path;
+            }
+
+            save_to_file(&config, file_path)?;
         }
         Action::Encrypt {
             private_key,
