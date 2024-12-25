@@ -1,9 +1,12 @@
-use anchor_client::solana_sdk::signer::{keypair::Keypair, Signer};
+use anchor_client::solana_sdk::{
+    pubkey::Pubkey,
+    signer::{keypair::Keypair, Signer},
+};
 use anyhow::Result;
 use config_file::ConfigFile;
-use instructions::{InitProgramParams, LockFundProgram};
+use instructions::{CreateConfigParams, InitProgramParams, LockFundProgram};
 use sha2::{Digest, Sha256};
-use std::{path::Path, process::exit};
+use std::{path::Path, process::exit, str::FromStr};
 use utils::{load_from_file, save_to_file};
 
 use crate::*;
@@ -38,14 +41,17 @@ macro_rules! get_address {
 #[derive(Debug)]
 pub enum Action {
     InitConfig,
-    Escrow {
-        config_account: Option<String>,
-    },
     Get,
     Set {
         rpc_url: Option<String>,
         authority_path: Option<String>,
         approver_path: Option<String>,
+    },
+    EscrowConfig {
+        config_account: Option<String>,
+    },
+    InitEscrow {
+        recipient: String,
     },
     Encrypt {
         private_key: String,
@@ -146,12 +152,33 @@ pub fn handler(action: Action) -> Result<()> {
 
             save_to_file(&config, file_path)?;
         }
-        Action::Escrow { config_account } => {
+        Action::EscrowConfig { config_account } => {
             let config_data: lock_fund::ConfigAccount = program.config_data(config_account)?;
             println_name_value("Authority: ", &config_data.authority.to_string());
             println_name_value("Approver: ", &config_data.approver.to_string());
             println_name_value("Recipient: ", &config_data.recipient.to_string());
-            println_name_value("Enable transfer full: ", &config_data.enable_transfer_full.to_string());
+            println_name_value(
+                "Enable transfer full: ",
+                &config_data.enable_transfer_full.to_string(),
+            );
+        }
+
+        Action::InitEscrow { recipient } => {
+            let params = CreateConfigParams {
+                cliff_time_duration: 24 * 60 * 60,
+                amount_per_day: 1_000_000,
+                update_actor_mode: 0,
+                enable_transfer_full: 0,
+                recipient: Pubkey::from_str(&recipient)?,
+                approver: program.approver.pubkey(),
+            };
+            let sig = program.create_config(params).unwrap();
+            println_name_value("New escrow config created: ", &program.config_account.to_string());
+            println_name_value("New escrow account created: ", &program.escrow.to_string());
+            println_name_value(
+                "Create escrow transaction: ",
+                &bs58::encode(sig).into_string(),
+            );
         }
 
         Action::Encrypt {

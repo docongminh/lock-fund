@@ -49,6 +49,7 @@ impl LockFundProgram {
         let data: lock_fund::ConfigAccount = self.program.account(account)?;
         Ok(data)
     }
+
     pub fn init(params: InitProgramParams) -> Self {
         let InitProgramParams {
             rpc_url,
