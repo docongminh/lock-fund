@@ -103,12 +103,16 @@ impl LockFundProgram {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c7edcbe (cli transfer token)
     pub fn transfer_token(&self, mint: Pubkey, amount: u64) -> Result<Signature> {
         let config_account_data: lock_fund::ConfigAccount =
             self.program.account(self.config_account)?;
         let escrow_token = get_associated_token_address(&self.escrow, &mint);
         let recipient_token = get_associated_token_address(&config_account_data.recipient, &mint);
         let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
+<<<<<<< HEAD
 =======
     pub fn transfer_token(
         &self,
@@ -129,6 +133,8 @@ impl LockFundProgram {
         // TODO: Case recipient token account is not initialized
         let _ = self.program.rpc().get_token_account(&recipient_token)?;
 >>>>>>> 1e2e1c7 (eslint)
+=======
+>>>>>>> c7edcbe (cli transfer token)
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
