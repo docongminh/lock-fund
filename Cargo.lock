@@ -1157,6 +1157,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "anyhow",
+ "bs58 0.5.1",
  "clap 4.5.23",
  "console",
  "curve25519-dalek",

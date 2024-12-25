@@ -1,8 +1,8 @@
-use std::{path::Path, process::exit};
-
+use anchor_client::solana_sdk::signer::{keypair::Keypair, Signer};
 use anyhow::Result;
 use config_file::ConfigFile;
 use sha2::{Digest, Sha256};
+use std::{path::Path, process::exit};
 use utils::{load_from_file, save_to_file};
 
 use crate::*;
@@ -13,6 +13,24 @@ macro_rules! config_path {
         let mut root_path = dirs_next::home_dir().expect("home directory");
         root_path.extend([".config", ".lock-fund-cli", "config.json"]);
         root_path.to_str().unwrap().to_string()
+    }};
+}
+
+#[macro_export]
+macro_rules! validate_keypair {
+    ($path:expr) => {{
+        let bytes_data = load_from_file::<Vec<u8>, String>($path).unwrap();
+        let _ = Keypair::from_bytes(bytes_data.as_slice());
+    }};
+}
+
+#[macro_export]
+macro_rules! get_address {
+    ($path:expr) => {{
+        let bytes_data = load_from_file::<Vec<u8>, String>($path).unwrap();
+        let keypair = Keypair::from_bytes(bytes_data.as_slice())?;
+
+        bs58::encode(keypair.pubkey().to_bytes()).into_string()
     }};
 }
 
@@ -75,13 +93,17 @@ pub fn handler(action: Action) -> Result<()> {
                 println_name_value("Not found config file at: ", &file_path);
                 exit(1);
             }
-            let config =
-                load_from_file::<ConfigFile, String>(file_path.clone()).expect("Config file created");
-                println_name_value("FILE PATH: ", &file_path);   
+            let config = load_from_file::<ConfigFile, String>(file_path.clone())
+                .expect("Config file created");
+            let authority_address = get_address!(config.authority_path.clone());
+            let approver_address = get_address!(config.approver_path.clone());
+            println_name_value("FILE PATH: ", &file_path);
             println_name_value("RPC URL: ", &config.rpc_url);
             println_name_value("WebSocket URL: ", &config.wss_url);
             println_name_value("Approver Path: ", &config.approver_path);
+            println_name_value("Authority Address: ", &authority_address);
             println_name_value("Authority Path: ", &config.authority_path);
+            println_name_value("Approver Address: ", &approver_address);
         }
         Action::Set {
             rpc_url,
@@ -100,10 +122,12 @@ pub fn handler(action: Action) -> Result<()> {
                 config.rpc_url = rpc_url;
             }
             if let Some(authority_path) = authority_path {
+                validate_keypair!(authority_path.clone());
                 config.authority_path = authority_path;
             }
 
             if let Some(approver_path) = approver_path {
+                validate_keypair!(approver_path.clone());
                 config.approver_path = approver_path;
             }
 
