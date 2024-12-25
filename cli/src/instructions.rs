@@ -1,17 +1,14 @@
 use std::rc::Rc;
 use std::str::FromStr;
 
-use anchor_client::anchor_lang::{solana_program, InstructionData, ToAccountMetas};
-use anchor_client::solana_sdk::signature::read_keypair_file;
+use anchor_client::anchor_lang::solana_program;
 use anchor_client::solana_sdk::{
-    instruction::Instruction,
     pubkey::Pubkey,
-    signature::Signature,
+    signature::{read_keypair_file, Signature},
     signer::{keypair::Keypair, Signer},
-    transaction::Transaction,
 };
 use anchor_client::Client;
-use anchor_spl::associated_token::{get_associated_token_address, spl_associated_token_account};
+use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token;
 use anyhow::{Ok, Result};
 
@@ -105,12 +102,33 @@ impl LockFundProgram {
         Ok(sig)
     }
 
+<<<<<<< HEAD
     pub fn transfer_token(&self, mint: Pubkey, amount: u64) -> Result<Signature> {
         let config_account_data: lock_fund::ConfigAccount =
             self.program.account(self.config_account)?;
         let escrow_token = get_associated_token_address(&self.escrow, &mint);
         let recipient_token = get_associated_token_address(&config_account_data.recipient, &mint);
         let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
+=======
+    pub fn transfer_token(
+        &self,
+        keypairs: [Keypair; 2],
+        token: Pubkey,
+        amount: u64,
+    ) -> Result<Signature> {
+        let (escrow, _bump) = Pubkey::find_program_address(
+            &[lock_fund::ESCROW_SEED, keypairs[0].pubkey().as_ref()],
+            &lock_fund::ID,
+        );
+        let (config_account, _bump) = Pubkey::find_program_address(
+            &[lock_fund::CONFIG_SEED, escrow.as_ref()],
+            &lock_fund::ID,
+        );
+        let config_account_data: lock_fund::ConfigAccount = self.program.account(config_account)?;
+        let recipient_token = get_associated_token_address(&config_account_data.recipient, &token);
+        // TODO: Case recipient token account is not initialized
+        let _ = self.program.rpc().get_token_account(&recipient_token)?;
+>>>>>>> 1e2e1c7 (eslint)
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
