@@ -102,24 +102,12 @@ impl LockFundProgram {
         Ok(sig)
     }
 
-    pub fn transfer_token(
-        &self,
-        keypairs: [Keypair; 2],
-        token: Pubkey,
-        amount: u64,
-    ) -> Result<Signature> {
-        let (escrow, _bump) = Pubkey::find_program_address(
-            &[lock_fund::ESCROW_SEED, keypairs[0].pubkey().as_ref()],
-            &lock_fund::ID,
-        );
-        let (config_account, _bump) = Pubkey::find_program_address(
-            &[lock_fund::CONFIG_SEED, escrow.as_ref()],
-            &lock_fund::ID,
-        );
-        let config_account_data: lock_fund::ConfigAccount = self.program.account(config_account)?;
-        let recipient_token = get_associated_token_address(&config_account_data.recipient, &token);
-        // TODO: Case recipient token account is not initialized
-        let _ = self.program.rpc().get_token_account(&recipient_token)?;
+    pub fn transfer_token(&self, mint: Pubkey, amount: u64) -> Result<Signature> {
+        let config_account_data: lock_fund::ConfigAccount =
+            self.program.account(self.config_account)?;
+        let escrow_token = get_associated_token_address(&self.escrow, &mint);
+        let recipient_token = get_associated_token_address(&config_account_data.recipient, &mint);
+        let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
@@ -128,12 +116,12 @@ impl LockFundProgram {
             .program
             .request()
             .accounts(lock_fund::accounts::TransferToken {
-                config_account,
-                escrow,
-                escrow_token: escrow,
+                config_account: self.config_account,
+                escrow: self.escrow,
+                escrow_token,
                 recipient_token,
                 recipient: config_account_data.recipient,
-                mint_token: token,
+                mint_token: mint,
                 authority: self.program.payer(),
                 approver: self.approver.pubkey(),
                 token_program: token::ID,
@@ -141,6 +129,7 @@ impl LockFundProgram {
                 program: lock_fund::ID,
             })
             .args(lock_fund::instruction::TransferToken { amount })
+            .signer(&self.approver)
             .send()?;
         Ok(sig)
     }

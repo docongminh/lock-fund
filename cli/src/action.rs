@@ -57,6 +57,10 @@ pub enum Action {
     TransferSol {
         amount: u64,
     },
+    TransferToken {
+        mint: String,
+        amount: u64,
+    },
     Encrypt {
         private_key: String,
         password: String,
@@ -197,6 +201,11 @@ pub fn handler(action: Action) -> Result<()> {
             let lamports = amount * LAMPORTS_PER_SOL;
             let sig = program.transfer_sol(lamports).unwrap();
             println_name_value("Success transfer SOL: ", &bs58::encode(sig).into_string());
+        }
+
+        Action::TransferToken { mint, amount } => {
+            let sig = program.transfer_token(Pubkey::from_str(&mint)?, amount).unwrap();
+            println_name_value("Success transfer Token: ", &bs58::encode(sig).into_string());
         }
 
         Action::Encrypt {
