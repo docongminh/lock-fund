@@ -1,6 +1,7 @@
 use anchor_client::solana_sdk::signer::{keypair::Keypair, Signer};
 use anyhow::Result;
 use config_file::ConfigFile;
+use instructions::{InitProgramParams, LockFundProgram};
 use sha2::{Digest, Sha256};
 use std::{path::Path, process::exit};
 use utils::{load_from_file, save_to_file};
@@ -37,6 +38,9 @@ macro_rules! get_address {
 #[derive(Debug)]
 pub enum Action {
     InitConfig,
+    Escrow {
+        config_account: Option<String>,
+    },
     Get,
     Set {
         rpc_url: Option<String>,
@@ -51,8 +55,6 @@ pub enum Action {
         encrypted: String,
         password: String,
     },
-    TransferToken {},
-    TransferSol {},
 }
 
 // hash password to 32 bytes to feed into Generic Array
@@ -73,6 +75,17 @@ pub fn println_name_value(name: &str, value: &str) {
 }
 
 pub fn handler(action: Action) -> Result<()> {
+    let file_path = config_path!();
+    let config =
+        load_from_file::<ConfigFile, String>(file_path.clone()).expect("Config file created");
+
+    let params: InitProgramParams = InitProgramParams {
+        rpc_url: config.rpc_url,
+        wss_url: config.wss_url,
+        authority_path: config.authority_path,
+        approver_path: config.approver_path,
+    };
+    let program = LockFundProgram::init(params);
     match action {
         Action::InitConfig => {
             let default = ConfigFile::default();
@@ -133,6 +146,14 @@ pub fn handler(action: Action) -> Result<()> {
 
             save_to_file(&config, file_path)?;
         }
+        Action::Escrow { config_account } => {
+            let config_data: lock_fund::ConfigAccount = program.config_data(config_account)?;
+            println_name_value("Authority: ", &config_data.authority.to_string());
+            println_name_value("Approver: ", &config_data.approver.to_string());
+            println_name_value("Recipient: ", &config_data.recipient.to_string());
+            println_name_value("Enable transfer full: ", &config_data.enable_transfer_full.to_string());
+        }
+
         Action::Encrypt {
             private_key,
             password,
@@ -158,8 +179,6 @@ pub fn handler(action: Action) -> Result<()> {
                 String::from("decrypt_private_Key.json"),
             )?;
         }
-        Action::TransferToken {} => {}
-        Action::TransferSol {} => {}
     }
 
     Ok(())

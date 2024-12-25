@@ -31,6 +31,17 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
             }
             _ => unreachable!(),
         },
+
+        Some("escrow") => match sub_m("escrow")?.subcommand_name() {
+            Some("get_config") => {
+                let matches = sub_m("escrow")?.subcommand_matches("get_config").unwrap();
+                Ok(action::Action::Escrow {
+                    config_account: matches.get_one::<String>("account").cloned()
+                })
+            }
+            _ => unreachable!(),
+        },
+
         Some("encrypt") => {
             let sub_m = sub_m("encrypt")?;
             Ok(action::Action::Encrypt {
@@ -73,16 +84,15 @@ fn main() {
         action::Action::Set { .. } => {
             action::handler(action).unwrap();
         }
+
+        action::Action::Escrow { .. } => {
+            action::handler(action).unwrap();
+        }
+
         action::Action::Encrypt { .. } => {
             action::handler(action).unwrap();
         }
         action::Action::Decrypt { .. } => {
-            action::handler(action).unwrap();
-        }
-        action::Action::TransferToken { .. } => {
-            action::handler(action).unwrap();
-        }
-        action::Action::TransferSol { .. } => {
             action::handler(action).unwrap();
         }
     }

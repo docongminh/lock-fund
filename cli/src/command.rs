@@ -15,6 +15,7 @@ pub fn new() -> Command {
         .color(clap::ColorChoice::Auto)
         .styles(styles)
         .subcommand(command_config())
+        .subcommand(command_escrow())
         .subcommand(command_encrypt())
         .subcommand(command_decrypt())
         .subcommand(command_transfer_token())
@@ -53,6 +54,24 @@ pub fn command_config() -> Command {
                 ),
         )
 }
+
+pub fn command_escrow() -> Command {
+    Command::new("escrow")
+        .about("Interact with escrow program")
+        .aliases(&["get_config",])
+        .subcommand(
+            Command::new("get_config")
+                .about("Set a config data")
+                .arg(
+                    Arg::new("account")
+                        .short('a')
+                        .long("account")
+                        .required(false)
+                        .help("Get escrow config account data"),
+                )
+        )
+}
+
 
 pub fn command_encrypt() -> Command {
     Command::new("encrypt")
