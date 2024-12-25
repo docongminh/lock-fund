@@ -1,19 +1,19 @@
 use std::rc::Rc;
+use std::str::FromStr;
 
 use anchor_client::anchor_lang::{solana_program, InstructionData, ToAccountMetas};
 use anchor_client::solana_sdk::signature::read_keypair_file;
 use anchor_client::solana_sdk::{
     instruction::Instruction,
     pubkey::Pubkey,
-    signature::{Keypair, Signature},
-    signer::Signer,
+    signature::Signature,
+    signer::{keypair::Keypair, Signer},
     transaction::Transaction,
 };
 use anchor_client::Client;
 use anchor_spl::associated_token::{get_associated_token_address, spl_associated_token_account};
 use anchor_spl::token;
 use anyhow::{Ok, Result};
-use solana_rpc_client::rpc_client::RpcClient;
 
 pub struct CreateConfigParams {
     pub cliff_time_duration: u64,
@@ -35,10 +35,22 @@ pub struct InitProgramParams {
 pub struct LockFundProgram {
     pub program: anchor_client::Program<Rc<Keypair>>,
     pub approver: Keypair,
+    pub escrow: Pubkey,
+    pub config_account: Pubkey,
 }
 
 impl LockFundProgram {
-    pub fn init(&self, params: InitProgramParams) -> Self {
+    pub fn config_data(&self, config_account: Option<String>) -> Result<lock_fund::ConfigAccount> {
+        let mut account = self.escrow;
+        if let Some(config_account) = config_account {
+            account = Pubkey::from_str(&config_account)?;
+        }
+
+        let data: lock_fund::ConfigAccount = self.program.account(account)?;
+        Ok(data)
+    }
+
+    pub fn init(params: InitProgramParams) -> Self {
         let InitProgramParams {
             rpc_url,
             wss_url,
@@ -46,31 +58,36 @@ impl LockFundProgram {
             authority_path,
         } = params;
         let authority = read_keypair_file(authority_path).unwrap();
+        let authority_pubkey = authority.pubkey();
         let approver = read_keypair_file(approver_path).unwrap();
         let anchor_client = Client::new(
             anchor_client::Cluster::Custom(rpc_url, wss_url),
             Rc::new(authority),
         );
         let program = anchor_client.program(lock_fund::ID).unwrap();
-
-        LockFundProgram { program, approver }
-    }
-    pub fn create_config(&self, keypair: Keypair, params: CreateConfigParams) -> Result<Signature> {
         let (escrow, _bump) = Pubkey::find_program_address(
-            &[lock_fund::ESCROW_SEED, keypair.pubkey().as_ref()],
+            &[lock_fund::ESCROW_SEED, authority_pubkey.as_ref()],
             &lock_fund::ID,
         );
         let (config_account, _bump) = Pubkey::find_program_address(
             &[lock_fund::CONFIG_SEED, escrow.as_ref()],
             &lock_fund::ID,
         );
-        let sig = self
+        LockFundProgram {
+            program,
+            approver,
+            escrow,
+            config_account,
+        }
+    }
+    pub fn create_config(&self, params: CreateConfigParams) -> Result<Signature> {
+        let sig: Signature = self
             .program
             .request()
             .accounts(lock_fund::accounts::CreateConfig {
-                authority: keypair.pubkey(),
-                config_account,
-                escrow,
+                authority: self.program.payer(),
+                config_account: self.config_account,
+                escrow: self.escrow,
                 recipient: params.recipient,
                 approver: params.approver,
                 system_program: solana_program::system_program::id(),
@@ -130,26 +147,18 @@ impl LockFundProgram {
         Ok(sig)
     }
 
-    pub fn transfer_sol(&self, keypairs: [Keypair; 2], amount: u64) -> Result<Signature> {
-        let (escrow, _bump) = Pubkey::find_program_address(
-            &[lock_fund::ESCROW_SEED, keypairs[0].pubkey().as_ref()],
-            &lock_fund::ID,
-        );
-        let (config_account, _bump) = Pubkey::find_program_address(
-            &[lock_fund::CONFIG_SEED, escrow.as_ref()],
-            &lock_fund::ID,
-        );
-        let config_account_data: lock_fund::ConfigAccount = self.program.account(config_account)?;
+    pub fn transfer_sol(&self, amount: u64) -> Result<Signature> {
+        let config_account_data: lock_fund::ConfigAccount =
+            self.program.account(self.config_account)?;
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
-
         let sig = self
             .program
             .request()
             .accounts(lock_fund::accounts::TransferSol {
-                config_account,
-                escrow,
+                config_account: self.config_account,
+                escrow: self.escrow,
                 recipient: config_account_data.recipient,
                 authority: self.program.payer(),
                 approver: self.approver.pubkey(),
@@ -157,7 +166,8 @@ impl LockFundProgram {
                 system_program: solana_program::system_program::id(),
                 program: lock_fund::ID,
             })
-            .args(lock_fund::instruction::TransferToken { amount })
+            .args(lock_fund::instruction::TransferSol { amount })
+            .signer(&self.approver)
             .send()?;
         Ok(sig)
     }

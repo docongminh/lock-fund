@@ -15,6 +15,7 @@ pub fn new() -> Command {
         .color(clap::ColorChoice::Auto)
         .styles(styles)
         .subcommand(command_config())
+        .subcommand(command_escrow())
         .subcommand(command_encrypt())
         .subcommand(command_decrypt())
         .subcommand(command_transfer_token())
@@ -50,6 +51,41 @@ pub fn command_config() -> Command {
                         .long("approver_path")
                         .required(false)
                         .help("Approver for sign transaction"),
+                ),
+        )
+}
+
+pub fn command_escrow() -> Command {
+    Command::new("escrow")
+        .about("Interact with escrow program")
+        .aliases(&["init_escrow", "get_config"])
+        .subcommand(
+            Command::new("init").about("Init escrow").arg(
+                Arg::new("recipient")
+                    .short('r')
+                    .long("recipient")
+                    .required(true)
+                    .help("Init escrow config"),
+            ),
+        )
+        .subcommand(
+            Command::new("get_config").about("Set a config data").arg(
+                Arg::new("account")
+                    .short('a')
+                    .long("account")
+                    .required(false)
+                    .help("Get escrow config account data"),
+            ),
+        )
+        .subcommand(
+            Command::new("transfer_sol")
+                .about("Transfer SOL from escrow")
+                .arg(
+                    Arg::new("amount")
+                        .short('a')
+                        .long("amount")
+                        .required(true)
+                        .help("Transfer SOL from escrow"),
                 ),
         )
 }

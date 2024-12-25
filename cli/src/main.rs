@@ -31,6 +31,29 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
             }
             _ => unreachable!(),
         },
+
+        Some("escrow") => match sub_m("escrow")?.subcommand_name() {
+            Some("get_config") => {
+                let matches = sub_m("escrow")?.subcommand_matches("get_config").unwrap();
+                Ok(action::Action::EscrowConfig {
+                    config_account: matches.get_one::<String>("account").cloned(),
+                })
+            }
+            Some("init") => {
+                let matches = sub_m("escrow")?.subcommand_matches("init").unwrap();
+                Ok(action::Action::InitEscrow {
+                    recipient: matches.get_one::<String>("recipient").unwrap().to_string(),
+                })
+            }
+            Some("transfer_sol") => {
+                let matches = sub_m("escrow")?.subcommand_matches("transfer_sol").unwrap();
+                Ok(action::Action::TransferSol {
+                    amount: matches.get_one::<String>("amount").unwrap().parse::<u64>()?,
+                })
+            }
+            _ => unreachable!(),
+        },
+
         Some("encrypt") => {
             let sub_m = sub_m("encrypt")?;
             Ok(action::Action::Encrypt {
@@ -73,16 +96,23 @@ fn main() {
         action::Action::Set { .. } => {
             action::handler(action).unwrap();
         }
+
+        action::Action::EscrowConfig { .. } => {
+            action::handler(action).unwrap();
+        }
+
+        action::Action::InitEscrow { .. } => {
+            action::handler(action).unwrap();
+        }
+
+        action::Action::TransferSol { .. } => {
+            action::handler(action).unwrap();
+        }
+
         action::Action::Encrypt { .. } => {
             action::handler(action).unwrap();
         }
         action::Action::Decrypt { .. } => {
-            action::handler(action).unwrap();
-        }
-        action::Action::TransferToken { .. } => {
-            action::handler(action).unwrap();
-        }
-        action::Action::TransferSol { .. } => {
             action::handler(action).unwrap();
         }
     }

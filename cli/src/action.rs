@@ -1,8 +1,13 @@
-use anchor_client::solana_sdk::signer::{keypair::Keypair, Signer};
+use anchor_client::solana_sdk::{
+    native_token::LAMPORTS_PER_SOL,
+    pubkey::Pubkey,
+    signer::{keypair::Keypair, Signer},
+};
 use anyhow::Result;
 use config_file::ConfigFile;
+use instructions::{CreateConfigParams, InitProgramParams, LockFundProgram};
 use sha2::{Digest, Sha256};
-use std::{path::Path, process::exit};
+use std::{path::Path, process::exit, str::FromStr};
 use utils::{load_from_file, save_to_file};
 
 use crate::*;
@@ -43,6 +48,15 @@ pub enum Action {
         authority_path: Option<String>,
         approver_path: Option<String>,
     },
+    EscrowConfig {
+        config_account: Option<String>,
+    },
+    InitEscrow {
+        recipient: String,
+    },
+    TransferSol {
+        amount: u64,
+    },
     Encrypt {
         private_key: String,
         password: String,
@@ -51,8 +65,6 @@ pub enum Action {
         encrypted: String,
         password: String,
     },
-    TransferToken {},
-    TransferSol {},
 }
 
 // hash password to 32 bytes to feed into Generic Array
@@ -73,6 +85,17 @@ pub fn println_name_value(name: &str, value: &str) {
 }
 
 pub fn handler(action: Action) -> Result<()> {
+    let file_path = config_path!();
+    let config =
+        load_from_file::<ConfigFile, String>(file_path.clone()).expect("Config file created");
+
+    let params: InitProgramParams = InitProgramParams {
+        rpc_url: config.rpc_url,
+        wss_url: config.wss_url,
+        authority_path: config.authority_path,
+        approver_path: config.approver_path,
+    };
+    let program = LockFundProgram::init(params);
     match action {
         Action::InitConfig => {
             let default = ConfigFile::default();
@@ -104,6 +127,11 @@ pub fn handler(action: Action) -> Result<()> {
             println_name_value("Authority Address: ", &authority_address);
             println_name_value("Authority Path: ", &config.authority_path);
             println_name_value("Approver Address: ", &approver_address);
+            println_name_value(
+                "Escrow Config Address: ",
+                &program.config_account.to_string(),
+            );
+            println_name_value("Escrow Address: ", &program.escrow.to_string());
         }
         Action::Set {
             rpc_url,
@@ -133,6 +161,44 @@ pub fn handler(action: Action) -> Result<()> {
 
             save_to_file(&config, file_path)?;
         }
+        Action::EscrowConfig { config_account } => {
+            let config_data: lock_fund::ConfigAccount = program.config_data(config_account)?;
+            println_name_value("Authority: ", &config_data.authority.to_string());
+            println_name_value("Approver: ", &config_data.approver.to_string());
+            println_name_value("Recipient: ", &config_data.recipient.to_string());
+            println_name_value(
+                "Enable transfer full: ",
+                &config_data.enable_transfer_full.to_string(),
+            );
+        }
+
+        Action::InitEscrow { recipient } => {
+            let params = CreateConfigParams {
+                cliff_time_duration: 24 * 60 * 60,
+                amount_per_day: 1_000_000,
+                update_actor_mode: 0,
+                enable_transfer_full: 0,
+                recipient: Pubkey::from_str(&recipient)?,
+                approver: program.approver.pubkey(),
+            };
+            let sig = program.create_config(params).unwrap();
+            println_name_value(
+                "New escrow config created: ",
+                &program.config_account.to_string(),
+            );
+            println_name_value("New escrow account created: ", &program.escrow.to_string());
+            println_name_value(
+                "Create escrow transaction: ",
+                &bs58::encode(sig).into_string(),
+            );
+        }
+
+        Action::TransferSol { amount } => {
+            let lamports = amount * LAMPORTS_PER_SOL;
+            let sig = program.transfer_sol(lamports).unwrap();
+            println_name_value("Success transfer SOL: ", &bs58::encode(sig).into_string());
+        }
+
         Action::Encrypt {
             private_key,
             password,
@@ -158,8 +224,6 @@ pub fn handler(action: Action) -> Result<()> {
                 String::from("decrypt_private_Key.json"),
             )?;
         }
-        Action::TransferToken {} => {}
-        Action::TransferSol {} => {}
     }
 
     Ok(())
