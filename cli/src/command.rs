@@ -1,6 +1,6 @@
 use clap::{
     builder::styling::{AnsiColor, Effects, Styles},
-    Arg, Command,
+    Arg, ArgGroup, Command,
 };
 
 pub fn new() -> Command {
@@ -14,10 +14,27 @@ pub fn new() -> Command {
         .about("encrypt/decrypt private key and interact with lock fund program")
         .color(clap::ColorChoice::Auto)
         .styles(styles)
+        .subcommand(command_config())
         .subcommand(command_encrypt())
         .subcommand(command_decrypt())
         .subcommand(command_transfer_token())
         .subcommand(command_transfer_sol())
+}
+
+pub fn command_config() -> Command {
+    Command::new("config")
+        .about("Get config data")
+        .aliases(&["init", "get", "set"])
+        .subcommand(Command::new("init").about("Initialize config.json"))
+        .subcommand(Command::new("get").about("Get current config"))
+        .subcommand(
+            Command::new("set").about("Set a config data").group(
+                ArgGroup::new("config_settings")
+                    .args(&["rpc_url", "approver_path", "authority_path"])
+                    .multiple(true)
+                    .required(true),
+            ),
+        )
 }
 
 pub fn command_encrypt() -> Command {
