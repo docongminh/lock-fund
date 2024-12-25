@@ -1,17 +1,14 @@
 use std::rc::Rc;
 use std::str::FromStr;
 
-use anchor_client::anchor_lang::{solana_program, InstructionData, ToAccountMetas};
-use anchor_client::solana_sdk::signature::read_keypair_file;
+use anchor_client::anchor_lang::solana_program;
 use anchor_client::solana_sdk::{
-    instruction::Instruction,
     pubkey::Pubkey,
-    signature::Signature,
+    signature::{read_keypair_file, Signature},
     signer::{keypair::Keypair, Signer},
-    transaction::Transaction,
 };
 use anchor_client::Client;
-use anchor_spl::associated_token::{get_associated_token_address, spl_associated_token_account};
+use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token;
 use anyhow::{Ok, Result};
 
@@ -121,7 +118,8 @@ impl LockFundProgram {
         );
         let config_account_data: lock_fund::ConfigAccount = self.program.account(config_account)?;
         let recipient_token = get_associated_token_address(&config_account_data.recipient, &token);
-        let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
+        // TODO: Case recipient token account is not initialized
+        let _ = self.program.rpc().get_token_account(&recipient_token)?;
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
