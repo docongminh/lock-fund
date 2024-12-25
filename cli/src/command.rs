@@ -77,6 +77,17 @@ pub fn command_escrow() -> Command {
                     .help("Get escrow config account data"),
             ),
         )
+        .subcommand(
+            Command::new("transfer_sol")
+                .about("Transfer SOL from escrow")
+                .arg(
+                    Arg::new("amount")
+                        .short('a')
+                        .long("amount")
+                        .required(true)
+                        .help("Transfer SOL from escrow"),
+                ),
+        )
 }
 
 pub fn command_encrypt() -> Command {

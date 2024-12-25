@@ -6,8 +6,8 @@ use anchor_client::solana_sdk::signature::read_keypair_file;
 use anchor_client::solana_sdk::{
     instruction::Instruction,
     pubkey::Pubkey,
-    signature::{Keypair, Signature},
-    signer::Signer,
+    signature::Signature,
+    signer::{keypair::Keypair, Signer},
     transaction::Transaction,
 };
 use anchor_client::Client;
@@ -81,7 +81,7 @@ impl LockFundProgram {
         }
     }
     pub fn create_config(&self, params: CreateConfigParams) -> Result<Signature> {
-        let sig = self
+        let sig: Signature = self
             .program
             .request()
             .accounts(lock_fund::accounts::CreateConfig {
@@ -147,26 +147,18 @@ impl LockFundProgram {
         Ok(sig)
     }
 
-    pub fn transfer_sol(&self, keypairs: [Keypair; 2], amount: u64) -> Result<Signature> {
-        let (escrow, _bump) = Pubkey::find_program_address(
-            &[lock_fund::ESCROW_SEED, keypairs[0].pubkey().as_ref()],
-            &lock_fund::ID,
-        );
-        let (config_account, _bump) = Pubkey::find_program_address(
-            &[lock_fund::CONFIG_SEED, escrow.as_ref()],
-            &lock_fund::ID,
-        );
-        let config_account_data: lock_fund::ConfigAccount = self.program.account(config_account)?;
+    pub fn transfer_sol(&self, amount: u64) -> Result<Signature> {
+        let config_account_data: lock_fund::ConfigAccount =
+            self.program.account(self.config_account)?;
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
-
         let sig = self
             .program
             .request()
             .accounts(lock_fund::accounts::TransferSol {
-                config_account,
-                escrow,
+                config_account: self.config_account,
+                escrow: self.escrow,
                 recipient: config_account_data.recipient,
                 authority: self.program.payer(),
                 approver: self.approver.pubkey(),
@@ -174,7 +166,8 @@ impl LockFundProgram {
                 system_program: solana_program::system_program::id(),
                 program: lock_fund::ID,
             })
-            .args(lock_fund::instruction::TransferToken { amount })
+            .args(lock_fund::instruction::TransferSol { amount })
+            .signer(&self.approver)
             .send()?;
         Ok(sig)
     }

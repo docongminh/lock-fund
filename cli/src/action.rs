@@ -1,4 +1,5 @@
 use anchor_client::solana_sdk::{
+    native_token::LAMPORTS_PER_SOL,
     pubkey::Pubkey,
     signer::{keypair::Keypair, Signer},
 };
@@ -52,6 +53,9 @@ pub enum Action {
     },
     InitEscrow {
         recipient: String,
+    },
+    TransferSol {
+        amount: u64,
     },
     Encrypt {
         private_key: String,
@@ -123,6 +127,11 @@ pub fn handler(action: Action) -> Result<()> {
             println_name_value("Authority Address: ", &authority_address);
             println_name_value("Authority Path: ", &config.authority_path);
             println_name_value("Approver Address: ", &approver_address);
+            println_name_value(
+                "Escrow Config Address: ",
+                &program.config_account.to_string(),
+            );
+            println_name_value("Escrow Address: ", &program.escrow.to_string());
         }
         Action::Set {
             rpc_url,
@@ -173,12 +182,21 @@ pub fn handler(action: Action) -> Result<()> {
                 approver: program.approver.pubkey(),
             };
             let sig = program.create_config(params).unwrap();
-            println_name_value("New escrow config created: ", &program.config_account.to_string());
+            println_name_value(
+                "New escrow config created: ",
+                &program.config_account.to_string(),
+            );
             println_name_value("New escrow account created: ", &program.escrow.to_string());
             println_name_value(
                 "Create escrow transaction: ",
                 &bs58::encode(sig).into_string(),
             );
+        }
+
+        Action::TransferSol { amount } => {
+            let lamports = amount * LAMPORTS_PER_SOL;
+            let sig = program.transfer_sol(lamports).unwrap();
+            println_name_value("Success transfer SOL: ", &bs58::encode(sig).into_string());
         }
 
         Action::Encrypt {

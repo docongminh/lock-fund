@@ -45,6 +45,12 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
                     recipient: matches.get_one::<String>("recipient").unwrap().to_string(),
                 })
             }
+            Some("transfer_sol") => {
+                let matches = sub_m("escrow")?.subcommand_matches("transfer_sol").unwrap();
+                Ok(action::Action::TransferSol {
+                    amount: matches.get_one::<String>("amount").unwrap().parse::<u64>()?,
+                })
+            }
             _ => unreachable!(),
         },
 
@@ -96,6 +102,10 @@ fn main() {
         }
 
         action::Action::InitEscrow { .. } => {
+            action::handler(action).unwrap();
+        }
+
+        action::Action::TransferSol { .. } => {
             action::handler(action).unwrap();
         }
 
