@@ -1,10 +1,14 @@
 pub mod action;
 pub mod cipher;
 pub mod command;
+pub mod config_file;
 pub mod instructions;
+pub mod utils;
 
+use anyhow::Ok;
 pub use anyhow::{Context, Result};
 pub use cipher::*;
+use console::style;
 
 pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
     let sub_m = |subcommand| -> Result<&clap::ArgMatches> {
@@ -14,6 +18,19 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
     };
 
     match matches.subcommand_name() {
+        Some("config") => match sub_m("config")?.subcommand_name() {
+            Some("init") => Ok(action::Action::InitConfig),
+            Some("get") => Ok(action::Action::Get),
+            Some("set") => {
+                let matches = sub_m("config")?.subcommand_matches("set").unwrap();
+                Ok(action::Action::Set {
+                    rpc_url: matches.get_one::<String>("rpc_url").cloned(),
+                    authority_path: matches.get_one::<String>("authority_path").cloned(),
+                    approver_path: matches.get_one::<String>("approver_path").cloned(),
+                })
+            }
+            _ => unreachable!(),
+        },
         Some("encrypt") => {
             let sub_m = sub_m("encrypt")?;
             Ok(action::Action::Encrypt {
@@ -49,6 +66,13 @@ fn main() {
     let matches = cmd.get_matches();
     let action = get_action(&matches).unwrap();
     match action {
+        action::Action::InitConfig { .. } => action::handler(action).unwrap(),
+        action::Action::Get { .. } => {
+            action::handler(action).unwrap();
+        }
+        action::Action::Set { .. } => {
+            action::handler(action).unwrap();
+        }
         action::Action::Encrypt { .. } => {
             action::handler(action).unwrap();
         }
