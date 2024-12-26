@@ -88,6 +88,24 @@ pub fn command_escrow() -> Command {
                         .help("Transfer SOL from escrow"),
                 ),
         )
+        .subcommand(
+            Command::new("transfer_token")
+                .about("Transfer Token from escrow")
+                .arg(
+                    Arg::new("mint")
+                        .short('m')
+                        .long("mint")
+                        .required(true)
+                        .help("Mint token use to transfer from escrow"),
+                )
+                .arg(
+                    Arg::new("amount")
+                        .short('a')
+                        .long("amount")
+                        .required(true)
+                        .help("Transfer Token from escrow"),
+                ),
+        )
 }
 
 pub fn command_encrypt() -> Command {
