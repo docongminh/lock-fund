@@ -9,7 +9,7 @@ use anchor_client::solana_sdk::{
     signer::{keypair::Keypair, Signer},
 };
 use anchor_client::Client;
-use anchor_spl::associated_token::get_associated_token_address;
+use anchor_spl::associated_token::{get_associated_token_address, spl_associated_token_account};
 use anchor_spl::token::{spl_token::state::Mint, ID};
 use anyhow::{Ok, Result};
 
@@ -113,14 +113,24 @@ impl LockFundProgram {
         let raw_amount = amount * 10u64.pow(decimals as u32) as f64;
 
         //
-        let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
 
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
 
-        let sig = self
-            .program
-            .request()
+        let mut request_builders = self.program.request();
+        let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
+        if recipient_token_data.is_none() {
+            let create_ata_ins =
+                spl_associated_token_account::instruction::create_associated_token_account(
+                    &self.program.payer(),
+                    &recipient_token,
+                    &mint,
+                    &ID,
+                );
+            // 
+            request_builders = request_builders.instruction(create_ata_ins);
+        }
+        let sig = request_builders
             .accounts(lock_fund::accounts::TransferToken {
                 config_account: self.config_account,
                 escrow: self.escrow,
@@ -134,7 +144,9 @@ impl LockFundProgram {
                 event_authority,
                 program: lock_fund::ID,
             })
-            .args(lock_fund::instruction::TransferToken { amount: raw_amount as u64 })
+            .args(lock_fund::instruction::TransferToken {
+                amount: raw_amount as u64,
+            })
             .signer(&self.approver)
             .send()?;
         Ok(sig)
