@@ -50,7 +50,7 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
             Some("transfer_sol") => {
                 let matches = sub_m("escrow")?.subcommand_matches("transfer_sol").unwrap();
                 Ok(action::Action::TransferSol {
-                    amount: matches.get_one::<String>("amount").unwrap().parse::<u64>()?,
+                    amount: matches.get_one::<String>("amount").unwrap().parse::<f64>()?,
                 })
             }
 
@@ -58,7 +58,7 @@ pub fn get_action(matches: &clap::ArgMatches) -> Result<action::Action> {
                 let matches = sub_m("escrow")?.subcommand_matches("transfer_token").unwrap();
                 Ok(action::Action::TransferToken {
                     mint: matches.get_one::<String>("mint").unwrap().to_string(),
-                    amount: matches.get_one::<String>("amount").unwrap().parse::<u64>()?,
+                    amount: matches.get_one::<String>("amount").unwrap().parse::<f64>()?,
                 })
             }
             _ => unreachable!(),

@@ -103,14 +103,14 @@ impl LockFundProgram {
         Ok(sig)
     }
 
-    pub fn transfer_token(&self, mint: Pubkey, amount: u64) -> Result<Signature> {
+    pub fn transfer_token(&self, mint: Pubkey, amount: f64) -> Result<Signature> {
         let config_account_data: lock_fund::ConfigAccount =
             self.program.account(self.config_account)?;
         let escrow_token = get_associated_token_address(&self.escrow, &mint);
         let recipient_token = get_associated_token_address(&config_account_data.recipient, &mint);
         let mint_account = self.program.rpc().get_account(&mint).unwrap();
         let decimals = Mint::unpack(&mint_account.data).unwrap().decimals;
-        let raw_amount = amount * 10u64.pow(decimals as u32);
+        let raw_amount = amount * 10u64.pow(decimals as u32) as f64;
 
         //
         let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
@@ -134,7 +134,7 @@ impl LockFundProgram {
                 event_authority,
                 program: lock_fund::ID,
             })
-            .args(lock_fund::instruction::TransferToken { amount: raw_amount })
+            .args(lock_fund::instruction::TransferToken { amount: raw_amount as u64 })
             .signer(&self.approver)
             .send()?;
         Ok(sig)
