@@ -2,6 +2,7 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use anchor_client::anchor_lang::solana_program;
+use anchor_client::solana_sdk::program_pack::Pack;
 use anchor_client::solana_sdk::{
     pubkey::Pubkey,
     signature::{read_keypair_file, Signature},
@@ -9,7 +10,7 @@ use anchor_client::solana_sdk::{
 };
 use anchor_client::Client;
 use anchor_spl::associated_token::get_associated_token_address;
-use anchor_spl::token;
+use anchor_spl::token::{spl_token::state::Mint, ID};
 use anyhow::{Ok, Result};
 
 pub struct CreateConfigParams {
@@ -107,6 +108,11 @@ impl LockFundProgram {
             self.program.account(self.config_account)?;
         let escrow_token = get_associated_token_address(&self.escrow, &mint);
         let recipient_token = get_associated_token_address(&config_account_data.recipient, &mint);
+        let mint_account = self.program.rpc().get_account(&mint).unwrap();
+        let decimals = Mint::unpack(&mint_account.data).unwrap().decimals;
+        let raw_amount = amount * 10u64.pow(decimals as u32);
+
+        //
         let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
 
         let (event_authority, _bump) =
@@ -124,11 +130,11 @@ impl LockFundProgram {
                 mint_token: mint,
                 authority: self.program.payer(),
                 approver: self.approver.pubkey(),
-                token_program: token::ID,
+                token_program: ID,
                 event_authority,
                 program: lock_fund::ID,
             })
-            .args(lock_fund::instruction::TransferToken { amount })
+            .args(lock_fund::instruction::TransferToken { amount: raw_amount })
             .signer(&self.approver)
             .send()?;
         Ok(sig)
