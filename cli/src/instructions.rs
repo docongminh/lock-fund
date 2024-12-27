@@ -117,6 +117,8 @@ impl LockFundProgram {
         let (event_authority, _bump) =
             Pubkey::find_program_address(&[b"__event_authority"], &lock_fund::ID);
 
+        // mut allow request_builders reassign again.
+        // to handle ownership & moved value
         let mut request_builders = self.program.request();
         let recipient_token_data = self.program.rpc().get_token_account(&recipient_token)?;
         if recipient_token_data.is_none() {
